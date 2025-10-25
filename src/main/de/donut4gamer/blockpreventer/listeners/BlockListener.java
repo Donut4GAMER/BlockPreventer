@@ -8,17 +8,31 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 
 public class BlockListener implements Listener {
-    private BlockPreventer plugin;
-    public BlockListener(BlockPreventer blockPreventer) {
+
+    private final BlockPreventer plugin;
+
+    public BlockListener(BlockPreventer plugin) {
         this.plugin = plugin;
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
-        String GM = this.plugin.getConfig().getString("Gamemode");
-        if (player.getGameMode().equals(GameMode.valueOf(GM))) {
-            event.setCancelled(true);
+
+        String gmString = plugin.getConfig().getString("Gamemode");
+        String bypassPermission = plugin.getConfig().getString("BypassPermission", "blockpreventer.bypass");
+
+        if (player.hasPermission(bypassPermission)) {
+            return;
+        }
+
+        try {
+            GameMode configuredGM = GameMode.valueOf(gmString.toUpperCase());
+            if (player.getGameMode().equals(configuredGM)) {
+                event.setCancelled(true);
+            }
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Unknown gamemode in the config.yml! Please use SURVIVAL, CREATIVE or ADVENTURE.");
         }
     }
 }
